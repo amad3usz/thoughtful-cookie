@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
+const passport = require('passport');
+const authenticate = require('./authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -48,65 +50,23 @@ app.use(
 	})
 );
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 function auth(req, res, next) {
-	console.log(req.session);
-	if (!req.session.user) {
+	console.log(req.user);
+
+	if (!req.user) {
 		const err = new Error('You are not authenticated!');
 		err.status = 401;
 		return next(err);
 	} else {
-		if (req.session.user === 'authenticated') {
-			return next();
-		} else {
-			const err = new Error('You are not authenticated!');
-			err.status = 401;
-			return next(err);
-		}
+		return next();
 	}
 }
-//const authHeader = req.headers.authorization;
-// if (!authHeader) {
-// 	const err = new Error('You are not authenticated!');
-// 	res.setHeader('WWW-Authenticate', 'Basic');
-// 	err.status = 401;
-// 	return next(err);
-// }
-// 	if (!req.session.user) {
-// 		const authHeader = req.headers.authorization;
-// 		if (!authHeader) {
-// 			const err = new Error('You are not authenticated!');
-// 			res.setHeader('WWW-Authenticate', 'Basic');
-// 			err.status = 401;
-// 			return next(err);
-// 		}
-// 		//parse username and password, put in array as first and second items, turn to string, then split with a colon
-// 		//Buffer is a global class from Node; don't need to require it (from is a static method of buffer)
-// 		const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-// 		const user = auth[0];
-// 		const pass = auth[1];
-// 		if (user === 'admin' && pass === 'password') {
-// 			req.session.user = 'admin';
-// 			//res.cookie('user', 'admin', { signed: true }); //1st arg is name for cookie and set up prop, 2nd arg is value to store in name prop, 2rd is optional and gives config values; creates cookie and sets up
-// 			return next(); //authorized and passes control to next middleware function
-// 		} else {
-// 			const err = new Error('You are not authenticated!');
-// 			res.setHeader('WWW-Authenticate', 'Basic');
-// 			err.status = 401;
-// 			return next(err);
-// 		}
-// 	} else {
-// 		if (req.session.user === 'admin') {
-// 			return next();
-// 		} else {
-// 			const err = new Error('You are not authenticated!');
-// 			err.status = 401;
-// 			return next(err);
-// 		}
-// 	}
-// }
 
 app.use(auth);
 app.use(express.static(path.join(__dirname, 'public')));
