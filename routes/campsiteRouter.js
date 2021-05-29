@@ -17,7 +17,7 @@ campsiteRouter
 	.post((req, res, next) => {
 		Campsite.create(req.body)
 			.then((campsite) => {
-				console.log('Campsite Created', campsite);
+				console.log('Campsite Created ', campsite);
 				res.statusCode = 200;
 				res.setHeader('Content-Type', 'application/json');
 				res.json(campsite);
@@ -59,9 +59,7 @@ campsiteRouter
 			{
 				$set: req.body,
 			},
-			{
-				new: true,
-			}
+			{ new: true }
 		)
 			.then((campsite) => {
 				res.statusCode = 200;
