@@ -34,29 +34,47 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-09876-54321'));
 
 function auth(req, res, next) {
-	console.log(req.headers);
-	const authHeader = req.headers.authorization;
-	if (!authHeader) {
-		const err = new Error('You are not authenticated!');
-		res.setHeader('WWW-Authenticate', 'Basic');
-		err.status = 401;
-		return next(err);
-	}
-	//parse username and password, put in array as first and second items, turn to string, then split with a colon
-	//Buffer is a global class from Node; don't need to require it (from is a static method of buffer)
-	const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-	const user = auth[0];
-	const pass = auth[1];
-	if (user === 'admin' && pass === 'password') {
-		return next(); //authorized and passes control to next middleware function
+	//console.log(req.headers);
+	//const authHeader = req.headers.authorization;
+	// if (!authHeader) {
+	// 	const err = new Error('You are not authenticated!');
+	// 	res.setHeader('WWW-Authenticate', 'Basic');
+	// 	err.status = 401;
+	// 	return next(err);
+	// }
+	if (!req.signedCookies.user) {
+		const authHeader = req.headers.authorization;
+		if (!authHeader) {
+			const err = new Error('You are not authenticated!');
+			res.setHeader('WWW-Authenticate', 'Basic');
+			err.status = 401;
+			return next(err);
+		}
+		//parse username and password, put in array as first and second items, turn to string, then split with a colon
+		//Buffer is a global class from Node; don't need to require it (from is a static method of buffer)
+		const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+		const user = auth[0];
+		const pass = auth[1];
+		if (user === 'admin' && pass === 'password') {
+			res.cookie('user', 'admin', { signed: true }); //1st arg is name for cookie and set up prop, 2nd arg is value to store in name prop, 2rd is optional and gives config values; creates cookie and sets up
+			return next(); //authorized and passes control to next middleware function
+		} else {
+			const err = new Error('You are not authenticated!');
+			res.setHeader('WWW-Authenticate', 'Basic');
+			err.status = 401;
+			return next(err);
+		}
 	} else {
-		const err = new Error('You are not authenticated!');
-		res.setHeader('WWW-Authenticate', 'Basic');
-		err.status = 401;
-		return next(err);
+		if (req.signedCookies.user === 'admin') {
+			return next();
+		} else {
+			const err = new Error('You are not authenticated!');
+			err.status = 401;
+			return next(err);
+		}
 	}
 }
 
